@@ -1,0 +1,256 @@
+﻿FUNCTION "VsV Error handeling" : Void
+TITLE = 'VsV Error handling routine Tia Portal'
+{ S7_Optimized_Access := 'FALSE' }
+AUTHOR : RVB
+FAMILY : VsV
+NAME : VsV
+VERSION : 3.4
+   VAR_INPUT
+      Dbnr : DB_ANY;
+   END_VAR
+
+   VAR_TEMP
+      alarm : Bool;
+      warning : Bool;
+      lamp : Bool;
+      klaxon : Bool;
+      alarm_w : DWord;
+      warning_w : DWord;
+      lamp_w : DWord;
+      klaxon_w : DWord;
+      Zone_peek : Byte;
+      Zone_int : Int;
+      DD_0_peek : DWord;
+      DD_4_peek : DWord;
+      DD_8_peek : DWord;
+      DD_12_peek : DWord;
+      DD_16_peek : DWord;
+   END_VAR
+
+
+BEGIN
+	//=============================================================================
+	//               .--.--.
+	//        ,---. /  /    '.       ,---.
+	//       /__./||  :  /`. /      /__./|
+	//  ,---.;  ; |;  |  |--`  ,---.;  ; |
+	// /___/ \  | ||  :  ;_   /___/ \  | |
+	// \   ;  \ ' | \  \    `.\   ;  \ ' |
+	//  \   \  \: |  `----.   \\   \  \: |
+	//   ;   \  ' .  __ \  \  | ;   \  ' .
+	//    \   \   ' /  /`--'  /  \   \   '
+	//     \   `  ;'--'.     /    \   `  ;
+	//      :   \ |  `--'---'      :   \ |
+	//       '---"                  '---"
+	//Ceratec
+	//(c)Copyright (2017) All Rights Reserved
+	//-----------------------------------------------------------------------------
+	//Library:       VSV
+	//Tested with:   1500 cpu
+	//Engineering:   TIA Portal sp1
+	//Functionality: Error handeling for vsv tables
+	//Author:        RVB
+	//Email:         vsv.report.error@gmail.com
+	//-----------------------------------------------------------------------------
+	//Change log table:
+	//Version  Date       Expert in charge Changes applied
+	// V3.1    ||||       verrandert van 16 bit naar 32 bit
+	// V3.2    ||||       fout in zone opgelost 10 hex wordt 10 int
+	// V3.3    ||||       Reset verplaatst zodat Fout voorang krijgt
+	// V3.4    ||||       Algemene alarm en warning bits toegevoegd
+	//=============================================================================
+
+
+	// Alle variablen uit DB lezen met peek
+	#Zone_peek := PEEK_BYTE(area := 16#84, dbNumber := #Dbnr, byteOffset := 21);
+	// 10 hex wordt 10 dec
+	#Zone_int := (BYTE_TO_INT(#Zone_peek) MOD 16 + ((BYTE_TO_INT(#Zone_peek) / 16) * 10));
+	#DD_0_peek := PEEK_DWORD(area := 16#84, dbNumber := #Dbnr, byteOffset := 0);
+	#DD_4_peek := PEEK_DWORD(area := 16#84, dbNumber := #Dbnr, byteOffset := 4);
+	#DD_8_peek := PEEK_DWORD(area := 16#84, dbNumber := #Dbnr, byteOffset := 8);
+	#DD_12_peek := PEEK_DWORD(area := 16#84, dbNumber := #Dbnr, byteOffset := 12);
+	#DD_16_peek := PEEK_DWORD(area := 16#84, dbNumber := #Dbnr, byteOffset := 16);
+	//--------------------------------------------------------------------------------
+	// Begin waarden setten
+	#alarm := true;
+	#lamp := true;
+	#klaxon := true;
+	#warning := true;
+	#alarm_w := DW#0;
+	#warning_w := DW#0;
+	#lamp_w := DW#0;
+	#klaxon_w := DW#0;
+	// Alarm new en oud vergelijken samen met masq
+	IF #DD_0_peek <> #DD_4_peek THEN
+	  #alarm_w := (#DD_4_peek AND NOT #DD_0_peek) AND #DD_8_peek;
+	  #warning_w := (#DD_4_peek AND NOT #DD_0_peek) AND NOT #DD_8_peek;
+	  #lamp_w := (#DD_4_peek AND NOT #DD_0_peek) AND #DD_12_peek;
+	  #klaxon_w := (#DD_4_peek AND NOT #DD_0_peek) AND #DD_16_peek;
+	  // Alarmen analyseren op nieuwe alarmen in combinatie met masq
+	  //-----------------------------------------------------------------------------
+	  // alarm aanwezig
+	  IF #alarm_w <> DW#0
+	  THEN
+	    #alarm := false;
+	  END_IF;
+	  // warning aanwezig
+	  IF #warning_w <> DW#0
+	  THEN
+	    #warning := false;
+	  END_IF;
+	  // alarm aanwezig die lamp doet aangaan
+	  IF #lamp_w <> DW#0
+	  THEN
+	    #lamp := false;
+	  END_IF;
+	  // alarm aanwezig die klaxon doet aangaan
+	  IF #klaxon_w <> DW#0
+	  THEN
+	    #klaxon := false;
+	  END_IF;
+
+	  IF #lamp = false AND "DB14 General VSV".Zone[#Zone_int].lamp = true
+	  THEN
+	    "DB14 General VSV".Zone[#Zone_int].lamp := false;
+	  END_IF;
+	  IF #warning = false AND "DB14 General VSV".Zone[#Zone_int].warning = true
+	  THEN
+	    "DB14 General VSV".Zone[#Zone_int].warning := false;
+	    "DB14 General VSV".warning := false;
+	  END_IF;
+	  //set klaxon in DB14
+	  IF #klaxon = false AND "DB14 General VSV".Zone[#Zone_int].klaxon = true
+	  THEN
+	    "DB14 General VSV".Zone[#Zone_int].klaxon := false;
+	  END_IF;
+	  //set alarm in DB14
+	  IF #alarm = false AND "DB14 General VSV".Zone[#Zone_int].alarm = true
+	  THEN
+	    "DB14 General VSV".Zone[#Zone_int].alarm := false;
+	    "DB14 General VSV".alarm := false;
+	  END_IF;
+		#klaxon_w := (#DD_0_peek AND NOT #DD_4_peek) AND #DD_16_peek;
+    IF #klaxon_w <> DW#0
+	  THEN
+	    "DB14 General VSV".Zone[#Zone_int].klaxon := true;
+	  END_IF;
+	  
+	  	  // Alarm oud overschijven met alarm niew
+	  POKE(area := 16#84,
+	       dbNumber := #Dbnr,
+	       byteOffset := 4,
+	       value := #DD_0_peek);
+	  //-----------------------------------------------------------------------------
+	  // update DD_0 en DD_4
+	  #DD_0_peek := PEEK_DWORD(area := 16#84, dbNumber := #Dbnr, byteOffset := 0);
+	  #DD_4_peek := PEEK_DWORD(area := 16#84, dbNumber := #Dbnr, byteOffset := 4);
+	  // Reset Zone bits en algemene aan de hand van de analyse
+	  //-----------------------------------------------------------------------------
+	  
+	  
+	  //-----------------------------------------------------------------------------
+	END_IF;
+	// Begin waarden terug setten
+	#alarm := false;
+	#lamp := false;
+	#klaxon := false;
+	#warning := false;
+	#alarm_w := DW#0;
+	#warning_w := DW#0;
+	#lamp_w := DW#0;
+	#klaxon_w := DW#0;
+	// Alarm oud vergelijken samen met masq
+	#alarm_w := #DD_4_peek AND #DD_8_peek;
+	#warning_w := #DD_4_peek AND NOT #DD_8_peek;
+	#lamp_w := #DD_4_peek AND #DD_12_peek;
+	#klaxon_w := #DD_4_peek AND #DD_16_peek;
+	// Alarmen analyseren
+	//-----------------------------------------------------------------------------
+	IF #alarm_w <> DW#0
+	THEN
+	  #alarm := true;
+	END_IF;
+	IF #warning_w <> DW#0
+	THEN
+	  #warning := true;
+	END_IF;
+	IF #lamp_w <> DW#0
+	THEN
+	  #lamp := true;
+	END_IF;
+
+	// set alarm bits in db
+	//-----------------------------------------------------------------------------
+	//set General alarm dbx20.0
+	IF #DD_8_peek <> DW#0 THEN
+	  POKE_BOOL(area := 16#84,
+	            dbNumber := #Dbnr,
+	            byteOffset := 20,
+	            bitOffset := 0,
+	            value := #alarm);
+	  IF #alarm = true THEN
+	    //set alarm in DB14 Deze worden gereset in de vergelijking oud nieuw
+	    "DB14 General VSV".Zone[#Zone_int].alarm := true;
+	    "DB14 General VSV".alarm := true;
+	  END_IF;
+	END_IF;
+	// Set General Warning dbx20.1
+	POKE_BOOL(area := 16#84,
+	          dbNumber := #Dbnr,
+	          byteOffset := 20,
+	          bitOffset := 1,
+	          value := #warning);
+
+	// Set Element in fault
+	IF #DD_0_peek <> DW#0 THEN
+	  POKE_BOOL(area := 16#84,
+	            dbNumber := #Dbnr,
+	            byteOffset := 20,
+	            bitOffset := 2,
+	            value := True);
+
+	ELSE
+	  POKE_BOOL(area := 16#84,
+	            dbNumber := #Dbnr,
+	            byteOffset := 20,
+	            bitOffset := 2,
+	            value := false);
+
+	END_IF;
+	// set bits in DB14 per zone en general
+	//-----------------------------------------------------------------------------
+	IF #lamp = true
+	THEN
+	  "DB14 General VSV".Zone[#Zone_int].lamp := true;
+	END_IF;
+	//set warning in DB14
+	IF #warning = true
+	THEN
+	  "DB14 General VSV".Zone[#Zone_int].warning := true;
+	  "DB14 General VSV".warning := true;
+	END_IF;
+
+
+	//reset
+	//-----------------------------------------------------------------------------
+	//reset klaxon
+	IF "DB14 General VSV".Zone[#Zone_int].resetklaxon = true THEN
+	  "DB14 General VSV".Zone[#Zone_int].klaxon := false;
+	END_IF;
+	//reset alarm
+	IF "DB14 General VSV".Zone[#Zone_int].reset = true
+	THEN
+	  POKE(area := 16#84,
+	       dbNumber := #Dbnr,
+	       byteOffset := 0,
+	       value := Dw#0);
+	  "DB14 General VSV".Zone[#Zone_int].alarm := false;
+	  "DB14 General VSV".Zone[#Zone_int].warning := false;
+	  "DB14 General VSV".Zone[#Zone_int].lamp := false;
+	  "DB14 General VSV".Zone[#Zone_int].klaxon := false;
+	  "DB14 General VSV".alarm := false;
+	  "DB14 General VSV".warning := false;
+
+	END_IF;
+
+END_FUNCTION

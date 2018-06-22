@@ -1,0 +1,72 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Document>
+  <Engineering version="V14" />
+  <DocumentInfo>
+    <Created>2017-01-12T07:59:05.527408Z</Created>
+    <ExportSetting>None</ExportSetting>
+    <InstalledProducts>
+      <Product>
+        <DisplayName>Totally Integrated Automation Portal</DisplayName>
+        <DisplayVersion>V14</DisplayVersion>
+      </Product>
+      <OptionPackage>
+        <DisplayName>TIA Portal Openness</DisplayName>
+        <DisplayVersion>V14</DisplayVersion>
+      </OptionPackage>
+      <OptionPackage>
+        <DisplayName>TIA Portal Teamcenter Gateway</DisplayName>
+        <DisplayVersion>V14</DisplayVersion>
+      </OptionPackage>
+      <Product>
+        <DisplayName>SINAMICS Startdrive</DisplayName>
+        <DisplayVersion>V14</DisplayVersion>
+      </Product>
+      <Product>
+        <DisplayName>STEP 7 Professional</DisplayName>
+        <DisplayVersion>V14</DisplayVersion>
+      </Product>
+      <OptionPackage>
+        <DisplayName>STEP 7 Safety</DisplayName>
+        <DisplayVersion>V14</DisplayVersion>
+      </OptionPackage>
+      <Product>
+        <DisplayName>WinCC Advanced</DisplayName>
+        <DisplayVersion>V14</DisplayVersion>
+      </Product>
+    </InstalledProducts>
+  </DocumentInfo>
+  <SW.Blocks.GlobalDB ID="0">
+    <AttributeList>
+      <AutoNumber>false</AutoNumber>
+      <HeaderVersion>3.4</HeaderVersion>
+      <Interface><Sections xmlns="http://www.siemens.com/automation/Openness/SW/Interface/v1">
+  <Section Name="Static">
+    <Member Name="alarm" Datatype="Bool" Remanence="Retain" />
+    <Member Name="warning" Datatype="Bool" Remanence="Retain" />
+    <Member Name="Zone" Datatype="Array[0..255] of Struct" Remanence="Retain">
+      <Member Name="alarm" Datatype="Bool" />
+      <Member Name="warning" Datatype="Bool" />
+      <Member Name="lamp" Datatype="Bool" />
+      <Member Name="klaxon" Datatype="Bool" />
+      <Member Name="reset" Datatype="Bool" />
+      <Member Name="resetklaxon" Datatype="Bool" />
+    </Member>
+  </Section>
+</Sections></Interface>
+      <MemoryLayout>Optimized</MemoryLayout>
+      <MemoryReserve>100</MemoryReserve>
+      <Name>General VSV</Name>
+      <Number>14</Number>
+      <ProgrammingLanguage>DB</ProgrammingLanguage>
+    </AttributeList>
+    <ObjectList>
+      <MultilingualText ID="1" CompositionName="Title">
+        <AttributeList>
+          <TextItems>
+            <Value lang="en-US">VSV algemeen</Value>
+          </TextItems>
+        </AttributeList>
+      </MultilingualText>
+    </ObjectList>
+  </SW.Blocks.GlobalDB>
+</Document>

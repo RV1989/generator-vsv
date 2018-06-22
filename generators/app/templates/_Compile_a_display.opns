@@ -1,0 +1,11 @@
+﻿# Author: RVB
+# Description: Compile a hmi
+#<projectPath>="C:\Users\Ceratec\Documents\Automation\test_cli\test_cli.ap14"
+#<hmiName>="HMI_1"
+
+connect Portal <projectPath>
+select Hmi <hmiName>
+compile Hmi
+
+save project
+disconnect Portal

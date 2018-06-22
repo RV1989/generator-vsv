@@ -1,0 +1,20 @@
+﻿# Author: RVB
+# Description: Update Telegramlijst
+#<projectPath>="C:\Users\Ceratec\Documents\Automation\test_cli\test_cli.ap14"
+#<plcName>="plc"
+#<Xml>= "C:\Users\Ceratec\Dropbox (Persoonlijk)\test-cli\Telegramlijst.xml"
+#<folder> = /TCP-IP/
+
+connect Portal <projectPath>
+start Transaction
+print "selecting plc"
+print <plcName>
+select Plc <plcName>
+print "importing xml"
+print <Xml>
+import ProgramBlocks <Xml> <folder>
+
+print "all done"
+commit Transaction
+save Project
+disconnect Portal
